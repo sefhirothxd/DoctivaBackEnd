@@ -9,6 +9,7 @@
 		"strict": false,
 		"sourceMap": true,
 		"esModuleInterop": true,
+		"skipLibCheck": true,
 		"declaration": true,
 		"useDefineForClassFields": false,
 		"experimentalDecorators": true,
