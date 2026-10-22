@@ -1,0 +1,45 @@
+# ---------------------------------------------------------------
+# Dependencias y builds: NUNCA se entregan ni se suben al repo.
+# Se regeneran con `npm install` y `npm run build`.
+# ---------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ---------------------------------------------------------------
+# Entorno y secretos: solo se comparte .env.example
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------
+# Logs
+# ---------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------------------------------------------------------------
+# Editor y sistema operativo
+# ---------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ---------------------------------------------------------------
+# Paquetes de entrega generados por scripts/pack.*
+# ---------------------------------------------------------------
+*.zip
+*.tar.gz
