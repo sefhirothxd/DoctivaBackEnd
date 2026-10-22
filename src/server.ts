@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors'; // <-- 1. Importa cors
 import colors from 'colors';
 import morgan from 'morgan';
 import { db } from './config/db';
@@ -16,6 +17,27 @@ async function connectToDatabase() {
 connectToDatabase();
 
 const app = express();
+
+// 2. Configura los orígenes permitidos para CORS
+const allowedOrigins = [
+	'https://doctiva.vercel.app', // Tu frontend en producción
+	'http://localhost:5173', // Vite local por defecto
+	'http://localhost:3000', // Otro puerto local común
+];
+
+app.use(
+	cors({
+		origin: function (origin, callback) {
+			// Permite solicitudes sin origen (como Thunder Client, Postman o apps móviles)
+			if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+				callback(null, true);
+			} else {
+				callback(new Error('Bloqueado por la política CORS'));
+			}
+		},
+		credentials: true,
+	})
+);
 
 app.use(morgan('dev'));
 
