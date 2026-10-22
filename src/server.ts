@@ -27,14 +27,7 @@ const allowedOrigins = [
 
 app.use(
 	cors({
-		origin: function (origin, callback) {
-			// Permite solicitudes sin origen (como Thunder Client, Postman o apps móviles)
-			if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-				callback(null, true);
-			} else {
-				callback(new Error('Bloqueado por la política CORS'));
-			}
-		},
+		origin: '*',
 		credentials: true,
 	})
 );
