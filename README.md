@@ -31,7 +31,7 @@ API REST para gestionar cursos, estudiantes, inscripciones, recursos educativos 
    npm run dev
    ```
 
-   El servidor inicia en `http://localhost:3001` (o en el puerto configurado en `PORT`) y monta la API bajo `/api`.
+   El servidor inicia en `http://localhost:3001` (o en el puerto configurado en `PORT`). La API se monta bajo `/api`.
 
 ### Otros comandos
 
@@ -45,6 +45,17 @@ Para ejecutar la versión compilada, primero ejecuta `npm run build` y luego `np
 ## Rutas de la API
 
 Todas las rutas están prefijadas con `/api`. Las respuestas y los cuerpos de solicitud usan JSON; en solicitudes con cuerpo, envía `Content-Type: application/json`.
+
+### Estado del servicio
+
+Estas rutas no llevan el prefijo `/api`:
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/` | Muestra el estado de la API y comprueba la conexión con la base de datos. |
+| `GET` | `/health` | Comprueba si la API y la base de datos están disponibles. |
+
+Cuando todo está disponible, responde con HTTP `200` y `status: "ok"`. Si la base de datos no responde, devuelve HTTP `503` y `status: "error"`.
 
 ### Cursos
 

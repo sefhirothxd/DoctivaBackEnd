@@ -23,7 +23,8 @@ export const registrarEstudiante = async (
 			await t.rollback();
 
 			res.status(400).json({
-				mensaje: 'Email, contraseña, nombres y apellidos son obligatorios',
+				mensaje:
+					'Los campos email, password, nombres y apellidos son requeridos',
 			});
 
 			return;
@@ -65,7 +66,7 @@ export const registrarEstudiante = async (
 
 				rol: 'estudiante',
 
-				estado: 'Activo',
+				estado: 'activo',
 			},
 
 			{ transaction: t }

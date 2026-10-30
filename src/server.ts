@@ -35,6 +35,27 @@ app.use(
 app.use(morgan('dev'));
 
 app.use(express.json());
+
+const healthCheck = async (_req: express.Request, res: express.Response) => {
+	try {
+		await db.authenticate();
+		res.status(200).json({
+			status: 'ok',
+			message: 'La API está activa y la base de datos está conectada.',
+			timestamp: new Date().toISOString(),
+		});
+	} catch {
+		res.status(503).json({
+			status: 'error',
+			message: 'La API está activa, pero no se puede conectar a la base de datos.',
+			timestamp: new Date().toISOString(),
+		});
+	}
+};
+
+app.get('/', healthCheck);
+app.get('/health', healthCheck);
+
 // Endpoints principales
 app.use('/api', apiRoutes);
 
