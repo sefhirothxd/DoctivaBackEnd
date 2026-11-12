@@ -96,3 +96,29 @@ export const crearRecurso = async (
 		res.status(400).json({ mensaje: 'Error al crear recurso', error });
 	}
 };
+
+/**
+ * ELIMINAR RECURSO: borra el recurso por id y sus asignaciones a cursos (recursos_curso).
+ */
+export const eliminarRecurso = async (
+	req: Request<{ id: string }>,
+	res: Response
+): Promise<void> => {
+	try {
+		const { id } = req.params;
+
+		const recurso = await Recurso.findByPk(id);
+		if (!recurso) {
+			res.status(404).json({ mensaje: 'Recurso no encontrado' });
+			return;
+		}
+
+		// Limpia la tabla puente antes para evitar error de FK
+		await recurso.$set('cursos', []);
+		await recurso.destroy();
+
+		res.status(200).json({ mensaje: 'Recurso eliminado exitosamente.' });
+	} catch (error) {
+		res.status(500).json({ mensaje: 'Error al eliminar recurso', error });
+	}
+};
