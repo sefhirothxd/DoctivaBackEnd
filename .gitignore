@@ -43,3 +43,6 @@ Thumbs.db
 # ---------------------------------------------------------------
 *.zip
 *.tar.gz
+
+# Claude Code personal instructions
+CLAUDE.local.md

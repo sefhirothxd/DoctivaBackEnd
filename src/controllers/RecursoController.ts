@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Recurso } from '../models/Recurso';
 import { Curso } from '../models/Curso';
+import { Op } from 'sequelize';
 
 export const obtenerRecursos = async (
 	req: Request,
@@ -21,8 +22,76 @@ export const crearRecurso = async (
 	res: Response
 ): Promise<void> => {
 	try {
-		const nuevoRecurso = await Recurso.create(req.body);
-		res.status(201).json(nuevoRecurso);
+		console.log('crearRecurso body:', req.body);
+		const {
+			assignedCourseIds,
+			curso_ids,
+			curso_id,
+			cursoId,
+			cursos,
+			curso,
+			curso_codigo,
+			cursoCodigo,
+			codigo_curso,
+			...datos
+		} = req.body ?? {};
+
+		// Acepta id (UUID) o código de curso, único o en array, o como objeto {id|codigo}
+		const aLista = (v: unknown): unknown[] => (Array.isArray(v) ? v : [v]);
+		const crudos = [
+			assignedCourseIds,
+			curso_ids,
+			cursos,
+			curso_id,
+			cursoId,
+			curso,
+			curso_codigo,
+			cursoCodigo,
+			codigo_curso,
+		]
+			.flatMap(aLista)
+			.filter(Boolean)
+			.map((c) =>
+				typeof c === 'object'
+					? String(
+							(c as { id?: string; codigo?: string }).id ??
+								(c as { codigo?: string }).codigo
+						)
+					: String(c)
+			);
+		const refs = [...new Set(crudos)];
+		const esUuid = (s: string) =>
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+		const ids = refs.filter(esUuid);
+		const codigos = refs.filter((r) => !esUuid(r));
+
+		const nuevoRecurso = await Recurso.create(datos);
+
+		if (refs.length > 0) {
+			const encontrados = await Curso.findAll({
+				where: {
+					[Op.or]: [
+						...(ids.length ? [{ id: ids }] : []),
+						...(codigos.length ? [{ codigo: codigos }] : []),
+					],
+				},
+			});
+			const faltan = refs.filter(
+				(r) => !encontrados.some((c) => c.id === r || c.codigo === r)
+			);
+			console.log('crearRecurso refs:', refs, 'faltan:', faltan);
+			if (faltan.length > 0) {
+				await nuevoRecurso.destroy();
+				res.status(400).json({ mensaje: 'Uno o más cursos no existen' });
+				return;
+			}
+			await nuevoRecurso.$set('cursos', encontrados);
+		}
+
+		const recurso = await Recurso.findByPk(nuevoRecurso.id, {
+			include: [Curso],
+		});
+		res.status(201).json(recurso);
 	} catch (error) {
 		res.status(400).json({ mensaje: 'Error al crear recurso', error });
 	}

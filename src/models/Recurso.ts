@@ -27,9 +27,6 @@ export class Recurso extends Model {
 	descripcion!: string;
 
 	@Column({ type: DataType.TEXT, allowNull: false })
-	asignatura!: string;
-
-	@Column({ type: DataType.TEXT, allowNull: false })
 	url!: string;
 
 	@Column({ type: DataType.TEXT })

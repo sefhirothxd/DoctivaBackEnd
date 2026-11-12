@@ -4,6 +4,7 @@ import { Estudiante } from '../models/Estudiante';
 import { Usuario } from '../models/Usuario';
 import { Inscripcion } from '../models/Inscripcion';
 import { Curso } from '../models/Curso';
+import { Op } from 'sequelize';
 
 export const obtenerEstudiantes = async (
 	req: Request,
@@ -18,6 +19,8 @@ export const obtenerEstudiantes = async (
 				},
 				{
 					model: Inscripcion,
+					where: { estado_curso: { [Op.ne]: 'retirado' } },
+					required: false,
 					include: [Curso],
 				},
 			],
@@ -42,6 +45,8 @@ export const obtenerEstudiantePorId = async (
 				},
 				{
 					model: Inscripcion,
+					where: { estado_curso: { [Op.ne]: 'retirado' } },
+					required: false,
 					include: [Curso],
 				},
 			],
@@ -129,7 +134,12 @@ export const crearEstudiante = async (
 		const estudianteCompleto = await Estudiante.findByPk(nuevoEstudiante.id, {
 			include: [
 				{ model: Usuario, attributes: { exclude: ['password_hash'] } },
-				{ model: Inscripcion, include: [Curso] },
+				{
+					model: Inscripcion,
+					where: { estado_curso: { [Op.ne]: 'retirado' } },
+					required: false,
+					include: [Curso],
+				},
 			],
 		});
 
@@ -148,8 +158,12 @@ export const actualizarEstudiante = async (
 ): Promise<void> => {
 	try {
 		const { id } = req.params;
-		const { firstName, lastName, email, phone, status, password, courseId } =
-			req.body;
+		const body = req.body;
+		// El front envía nombres/apellidos/telefono; se aceptan alias firstName/lastName/phone
+		const firstName = body.nombres ?? body.firstName;
+		const lastName = body.apellidos ?? body.lastName;
+		const phone = body.telefono ?? body.phone;
+		const { email, status, password, courseId, courseIds } = body;
 
 		const estudiante = await Estudiante.findByPk(id, {
 			include: [Usuario],
@@ -193,8 +207,38 @@ export const actualizarEstudiante = async (
 				await usuario.update(updateData);
 			}
 		}
-		// 3. Manejo opcional de curso
-		if (courseId) {
+		// 3. Sincronizar cursos inscritos si se envía courseIds
+		if (Array.isArray(courseIds)) {
+			const deseados = new Set<string>(courseIds);
+			const existentes = await Inscripcion.findAll({
+				where: { estudiante_id: estudiante.id },
+			});
+			const existentesPorCurso = new Map(
+				existentes.map((i) => [i.curso_id, i])
+			);
+
+			// Crear o reactivar
+			for (const cursoId of deseados) {
+				const insc = existentesPorCurso.get(cursoId);
+				if (!insc) {
+					await Inscripcion.create({
+						estudiante_id: estudiante.id,
+						curso_id: cursoId,
+						estado_curso: 'activo',
+					});
+				} else if (insc.estado_curso === 'retirado') {
+					await insc.update({ estado_curso: 'activo' });
+				}
+			}
+
+			// Los que ya no están: marcar como retirado (conserva historial)
+			for (const insc of existentes) {
+				if (!deseados.has(insc.curso_id) && insc.estado_curso !== 'retirado') {
+					await insc.update({ estado_curso: 'retirado' });
+				}
+			}
+		} else if (courseId) {
+			// Manejo opcional de un solo curso
 			const inscripcionExistente = await Inscripcion.findOne({
 				where: { estudiante_id: estudiante.id, curso_id: courseId },
 			});
@@ -210,7 +254,12 @@ export const actualizarEstudiante = async (
 		const estudianteActualizado = await Estudiante.findByPk(id, {
 			include: [
 				{ model: Usuario, attributes: { exclude: ['password_hash'] } },
-				{ model: Inscripcion, include: [Curso] },
+				{
+					model: Inscripcion,
+					where: { estado_curso: { [Op.ne]: 'retirado' } },
+					required: false,
+					include: [Curso],
+				},
 			],
 		});
 
