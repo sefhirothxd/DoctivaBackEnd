@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Recurso } from '../models/Recurso';
 import { Curso } from '../models/Curso';
+import { RecursoCurso } from '../models/RecursoCurso';
 import { Op } from 'sequelize';
 
 export const obtenerRecursos = async (
@@ -86,6 +87,16 @@ export const crearRecurso = async (
 				return;
 			}
 			await nuevoRecurso.$set('cursos', encontrados);
+			// El recurso nuevo va al final de cada curso: orden = MAX(orden) + 1
+			for (const c of encontrados) {
+				const max = (await RecursoCurso.max('orden', {
+					where: { curso_id: c.id, recurso_id: { [Op.ne]: nuevoRecurso.id } },
+				})) as number | null;
+				await RecursoCurso.update(
+					{ orden: (max ?? -1) + 1 },
+					{ where: { curso_id: c.id, recurso_id: nuevoRecurso.id } }
+				);
+			}
 		}
 
 		const recurso = await Recurso.findByPk(nuevoRecurso.id, {

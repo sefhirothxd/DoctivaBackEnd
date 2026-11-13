@@ -8,7 +8,11 @@ import apiRoutes from './routes';
 async function connectToDatabase() {
 	try {
 		await db.authenticate();
-		db.sync();
+		await db.sync();
+		// sync() no altera tablas existentes: añade la columna de orden si falta
+		await db.query(
+			'ALTER TABLE recursos_curso ADD COLUMN IF NOT EXISTS orden INTEGER NOT NULL DEFAULT 0'
+		);
 		console.log(colors.green('Connection has been established successfully.'));
 	} catch (error) {
 		console.error('Unable to connect to the database:', error);

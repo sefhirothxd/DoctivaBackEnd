@@ -29,4 +29,12 @@ export class RecursoCurso extends Model {
 		defaultValue: DataType.NOW,
 	})
 	asignado_en!: Date;
+
+	// Posición del recurso dentro del curso (0 = primero)
+	@Column({
+		type: DataType.INTEGER,
+		allowNull: false,
+		defaultValue: 0,
+	})
+	orden!: number;
 }
