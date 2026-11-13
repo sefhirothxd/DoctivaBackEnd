@@ -52,6 +52,63 @@ export const crearCurso = async (
 };
 
 /**
+ * ACTUALIZAR CURSO: edita los campos propios del curso (lista blanca; no toca id ni creado_en).
+ */
+export const actualizarCurso = async (
+	req: Request<{ id: string }>,
+	res: Response
+): Promise<void> => {
+	try {
+		const { id } = req.params;
+		const body = req.body ?? {};
+
+		// Campos obligatorios (allowNull: false en el modelo).
+		const requeridos = ['codigo', 'nombre', 'docente_nombre', 'horario', 'aula'];
+		const invalido = requeridos.find(
+			(campo) => typeof body[campo] !== 'string' || !body[campo].trim()
+		);
+		if (invalido) {
+			res.status(400).json({ mensaje: `El campo ${invalido} es obligatorio` });
+			return;
+		}
+		if (body.modalidad !== 'Presencial' && body.modalidad !== 'Virtual') {
+			res.status(400).json({ mensaje: 'Modalidad inválida' });
+			return;
+		}
+		if (body.descripcion !== undefined && typeof body.descripcion !== 'string') {
+			res.status(400).json({ mensaje: 'La descripción debe ser texto' });
+			return;
+		}
+
+		const curso = await Curso.findByPk(id);
+		if (!curso) {
+			res.status(404).json({ mensaje: 'Curso no encontrado' });
+			return;
+		}
+
+		await curso.update({
+			codigo: body.codigo.trim(),
+			nombre: body.nombre.trim(),
+			docente_nombre: body.docente_nombre.trim(),
+			modalidad: body.modalidad,
+			horario: body.horario.trim(),
+			aula: body.aula.trim(),
+			...(body.descripcion !== undefined && {
+				descripcion: body.descripcion.trim(),
+			}),
+		});
+
+		res.status(200).json(curso);
+	} catch (error) {
+		if ((error as { name?: string }).name === 'SequelizeUniqueConstraintError') {
+			res.status(409).json({ mensaje: 'Ya existe un curso con ese código' });
+			return;
+		}
+		res.status(400).json({ mensaje: 'Error al actualizar curso', error });
+	}
+};
+
+/**
  * REORDENAR RECURSOS: recibe { ids } con los ids de recurso del curso en el orden deseado
  * y guarda orden = índice en la tabla puente, en una transacción.
  */
